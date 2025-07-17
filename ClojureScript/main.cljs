@@ -11,7 +11,17 @@
 		"o" 256
 		"p" 512
 	})
+	(def encodedCharacter (atom 0))
 	(.addEventListener js/document "keydown" #(
-		js/console.log "Key down event detected" (get encodeKey (.-key %))
+		js/console.log
+			"Key down event detected"
+			(get encodeKey (.-key %))
+			(reset! encodedCharacter (bit-or @encodedCharacter (get encodeKey (.-key %) 0)))
+	))
+	(.addEventListener js/document "keyup" #(
+		js/console.log
+			"Key down event detected"
+			(get encodeKey (.-key %))
+			(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
 	))
 )
