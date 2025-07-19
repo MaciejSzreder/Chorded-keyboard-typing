@@ -11,6 +11,7 @@
 		"o" 256
 		"p" 512
 	}))
+	(def characterSet (atom "qwertyuiopasdfghjklzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM-=[]\\;',./`~!@#$%^&*()_+{}|:\"<>?"))
 	(def encodedCharacter (atom 0))
 	(def inputMode (atom :keyDown))
 
@@ -56,19 +57,30 @@
 		)
 	)
 
+	(def characterSetConfiguration (.createElement js/document "input"))
+	(set! (.-value characterSetConfiguration) @characterSet)
+	(.appendChild js/document.body characterSetConfiguration)
+
+	(def workspace (.createElement js/document "div"))
+
 	(def output (.createElement js/document "span"))
 	(.setAttribute output "style" "font-size: 2em; font-family: monospace;")
-	(.appendChild js/document.body output)
+	(.appendChild workspace output)
 
 	(def preview (.createElement js/document "span"))
 	(.setAttribute preview "style" "font-size: 2em; font-family: monospace; color: red;")
 	(.setAttribute preview "id" "preview")
-	(.appendChild js/document.body preview)
+	(.appendChild workspace preview)
 
 	(def toType (.createElement js/document "span"))
 	(.setAttribute toType "style" "font-size: 2em; font-family: monospace;")
-	(.appendChild js/document.body toType)
-	(set! (.-textContent toType) "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:',.<>?/`~")
+	(.appendChild workspace toType)
+	(set! (.-textContent toType) @characterSet)
+	
+	(.addEventListener characterSetConfiguration "input" #(do
+		(reset! characterSet (.-value characterSetConfiguration))
+		(set! (.-textContent toType) @characterSet)
+	))
 
 	(.addEventListener js/document "keydown" #(
 		when (contains? @encodeKey (.-key %))
@@ -88,6 +100,9 @@
 					)
 					(hint (subs (.-textContent toType) 0 1))
 					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
+					(when (< (.-length (.-textContent toType)) 20)
+						(set! (.-textContent toType) (str (.-textContent toType) @characterSet))
+					)
 				)
 				(do
 					(js/console.log "next release")
@@ -97,5 +112,8 @@
 			(reset! inputMode :keyUp)
 			(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
 	))
+
+	(.appendChild js/document.body workspace)
+
 	(hint (subs (.-textContent toType) 0 1))
 )
