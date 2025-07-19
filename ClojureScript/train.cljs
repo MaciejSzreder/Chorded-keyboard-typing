@@ -32,10 +32,29 @@
 	)
 
 	(def keyMapping (.createElement js/document "div"))
-	(doseq [finger (map createFingerConfigurationInput (range 10))]
+	(def fingers (map createFingerConfigurationInput (range 10)))
+	(doseq [finger fingers]
 		(.appendChild keyMapping finger)
 	)
 	(.appendChild js/document.body keyMapping)
+	
+	(defn highlightFinger [n]
+		(.setProperty (.-style (nth fingers n)) "background-color" "yellow")
+	)
+	(defn unhighlightFinger [n]
+		(.removeProperty (.-style (nth fingers n)) "background-color")
+	)
+	(defn hint [char]
+		(map
+			(fn [finger]
+				(if (not= 0 (bit-and (Math.pow 2 finger) (.charCodeAt char 0)))
+					(highlightFinger finger)
+					(unhighlightFinger finger)
+				)
+			)
+			(range 10)
+		)
+	)
 
 	(def output (.createElement js/document "span"))
 	(.setAttribute output "style" "font-size: 2em; font-family: monospace;")
@@ -67,6 +86,7 @@
 					(when (= (.fromCharCode js/String @encodedCharacter) (subs (.-textContent toType) 0 1))
 						(set! (.-textContent toType) (subs (.-textContent toType) 1))
 					)
+					(hint (subs (.-textContent toType) 0 1))
 					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
 				)
 				(do
@@ -77,5 +97,5 @@
 			(reset! inputMode :keyUp)
 			(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
 	))
-
+	(hint (subs (.-textContent toType) 0 1))
 )
