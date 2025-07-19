@@ -12,16 +12,28 @@
 		"p" 512
 	})
 	(def encodedCharacter (atom 0))
-	(.addEventListener js/document "keydown" #(
-		js/console.log
-			"Key down event detected"
-			(get encodeKey (.-key %))
+	(def inputMode (atom :keyDown))
+	(.addEventListener js/document "keydown" #(do
+		(reset! inputMode :keyDown)
+		(.log js/console
+			"preview"
 			(reset! encodedCharacter (bit-or @encodedCharacter (get encodeKey (.-key %) 0)))
+			(.fromCharCode js/String @encodedCharacter)
+		)
 	))
-	(.addEventListener js/document "keyup" #(
-		js/console.log
-			"Key down event detected"
-			(get encodeKey (.-key %))
-			(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
+	(.addEventListener js/document "keyup" #(do
+		(reset! inputMode :keyDown)
+		if (= @inputMode :keyUp)
+			(js/console.log
+				"output"
+				(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
+				(.fromCharCode js/String @encodedCharacter)
+			)
+			(js/console.log
+				"preview"
+				(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
+				(.fromCharCode js/String @encodedCharacter)
+			)
+
 	))
 )
