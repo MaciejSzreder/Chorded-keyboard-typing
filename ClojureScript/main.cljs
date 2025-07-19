@@ -13,27 +13,35 @@
 	})
 	(def encodedCharacter (atom 0))
 	(def inputMode (atom :keyDown))
-	(.addEventListener js/document "keydown" #(do
-		(reset! inputMode :keyDown)
-		(.log js/console
-			"preview"
-			(reset! encodedCharacter (bit-or @encodedCharacter (get encodeKey (.-key %) 0)))
-			(.fromCharCode js/String @encodedCharacter)
-		)
-	))
-	(.addEventListener js/document "keyup" #(do
-		(reset! inputMode :keyDown)
-		if (= @inputMode :keyUp)
-			(js/console.log
-				"output"
-				(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
-				(.fromCharCode js/String @encodedCharacter)
-			)
-			(js/console.log
-				"preview"
-				(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
-				(.fromCharCode js/String @encodedCharacter)
-			)
 
+	(def output (.createElement js/document "span"))
+	(.setAttribute output "style" "font-size: 2em; font-family: monospace;")
+	(.appendChild js/document.body output)
+
+	(def preview (.createElement js/document "span"))
+	(.setAttribute preview "style" "font-size: 2em; font-family: monospace;")
+	(.appendChild js/document.body preview)
+
+	(.addEventListener js/document "keydown" #(
+		when (contains? encodeKey (.-key %))
+			(reset! inputMode :keyDown)
+			(reset! encodedCharacter (bit-or @encodedCharacter (get encodeKey (.-key %) 0)))
+			(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
+		
 	))
+	(.addEventListener js/document "keyup" #(
+		when (contains? encodeKey (.-key %))
+			(if (= @inputMode :keyDown)
+				(do
+					(set! (.-textContent output) (str (.-textContent output) (.fromCharCode js/String @encodedCharacter)))
+					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
+				)
+				(do
+					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
+					(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
+				)
+			)
+			(reset! inputMode :keyUp)
+	))
+
 )
