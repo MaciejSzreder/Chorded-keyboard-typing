@@ -1,5 +1,5 @@
 (do
-	(def encodeKey {
+	(def encodeKey (atom {
 		"q" 1
 		"w" 2
 		"e" 4
@@ -10,14 +10,23 @@
 		"i" 128
 		"o" 256
 		"p" 512
-	})
+	}))
 	(def encodedCharacter (atom 0))
 	(def inputMode (atom :keyDown))
 
 	(defn createFingerConfigurationInput [finger]
-		(let [input (.createElement js/document "input")]
+		(let [
+				input (.createElement js/document "input")
+				encoded (Math/pow 2 finger)
+			]
 			(.setAttribute input "style" "font-size: 1em; font-family: monospace; width:2em; text-align: center")
-			(set! (.-value input) (some (fn [[key code]] (when (= code (Math/pow 2 finger)) key)) encodeKey))
+			(set! (.-value input) (some (fn [[key code]] (when (= code encoded) key)) @encodeKey))
+			(.addEventListener input "input" #(do
+				(reset! encodeKey (merge
+					(zipmap (.-value input) (map (fn [] encoded) (.-value input)))
+					(filter (fn[[key code]] (not= code encoded)) @encodeKey)
+				))
+			))
 			input
 		)
 	)
@@ -43,14 +52,14 @@
 	(set! (.-textContent toType) "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:',.<>?/`~")
 
 	(.addEventListener js/document "keydown" #(
-		when (contains? encodeKey (.-key %))
+		when (contains? @encodeKey (.-key %))
 			(reset! inputMode :keyDown)
-			(reset! encodedCharacter (bit-or @encodedCharacter (get encodeKey (.-key %) 0)))
+			(reset! encodedCharacter (bit-or @encodedCharacter (get @encodeKey (.-key %) 0)))
 			(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
 		
 	))
 	(.addEventListener js/document "keyup" #(
-		when (contains? encodeKey (.-key %))
+		when (contains? @encodeKey (.-key %))
 			(if (= @inputMode :keyDown)
 				(do
 					(js/console.log "first release")
@@ -58,11 +67,11 @@
 					(when (= (.fromCharCode js/String @encodedCharacter) (subs (.-textContent toType) 0 1))
 						(set! (.-textContent toType) (subs (.-textContent toType) 1))
 					)
-					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
+					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
 				)
 				(do
 					(js/console.log "next release")
-					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey (.-key %) 0))))
+					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
 				)
 			)
 			(reset! inputMode :keyUp)
