@@ -14,6 +14,20 @@
 	(def encodedCharacter (atom 0))
 	(def inputMode (atom :keyDown))
 
+	(defn createFingerConfigurationInput [finger]
+		(let [input (.createElement js/document "input")]
+			(.setAttribute input "style" "font-size: 1em; font-family: monospace; width:2em; text-align: center")
+			(set! (.-value input) (some (fn [[key code]] (when (= code (Math/pow 2 finger)) key)) encodeKey))
+			input
+		)
+	)
+
+	(def keyMapping (.createElement js/document "div"))
+	(doseq [finger (map createFingerConfigurationInput (range 10))]
+		(.appendChild keyMapping finger)
+	)
+	(.appendChild js/document.body keyMapping)
+
 	(def output (.createElement js/document "span"))
 	(.setAttribute output "style" "font-size: 2em; font-family: monospace;")
 	(.appendChild js/document.body output)
