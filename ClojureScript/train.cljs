@@ -79,7 +79,10 @@
 	
 	(.addEventListener characterSetConfiguration "input" #(do
 		(reset! characterSet (.-value characterSetConfiguration))
-		(set! (.-textContent toType) @characterSet)
+		(set! (.-textContent toType) "")
+		(while (< (.-length (.-textContent toType)) 20)
+			(set! (.-textContent toType) (str (.-textContent toType) (nth @characterSet (rand (.-length @characterSet)))))
+		)
 	))
 
 	(.addEventListener js/document "keydown" #(
@@ -100,8 +103,8 @@
 					)
 					(hint (subs (.-textContent toType) 0 1))
 					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
-					(when (< (.-length (.-textContent toType)) 20)
-						(set! (.-textContent toType) (str (.-textContent toType) @characterSet))
+					(while (< (.-length (.-textContent toType)) 20)
+						(set! (.-textContent toType) (str (.-textContent toType) (nth @characterSet (rand (.-length @characterSet)))))
 					)
 				)
 				(do
