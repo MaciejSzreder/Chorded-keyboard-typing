@@ -46,14 +46,11 @@
 		(.removeProperty (.-style (nth fingers n)) "background-color")
 	)
 	(defn hint [char]
-		(map
-			(fn [finger]
-				(if (not= 0 (bit-and (Math.pow 2 finger) (.charCodeAt char 0)))
-					(highlightFinger finger)
-					(unhighlightFinger finger)
-				)
+		(dotimes [finger 10]
+			(if (not= 0 (bit-and (Math.pow 2 finger) (.charCodeAt char 0)))
+				(highlightFinger finger)
+				(unhighlightFinger finger)
 			)
-			(range 10)
 		)
 	)
 
@@ -76,6 +73,7 @@
 	(.setAttribute toType "style" "font-size: 2em; font-family: monospace;")
 	(.appendChild workspace toType)
 	(set! (.-textContent toType) @characterSet)
+	(hint (subs (.-textContent toType) 0 1))
 	
 	(.addEventListener characterSetConfiguration "input" #(do
 		(reset! characterSet (.-value characterSetConfiguration))
@@ -83,6 +81,7 @@
 		(while (< (.-length (.-textContent toType)) 20)
 			(set! (.-textContent toType) (str (.-textContent toType) (nth @characterSet (rand (.-length @characterSet)))))
 		)
+		(hint (subs (.-textContent toType) 0 1))
 	))
 
 	(.addEventListener js/document "keydown" #(
@@ -117,6 +116,4 @@
 	))
 
 	(.appendChild js/document.body workspace)
-
-	(hint (subs (.-textContent toType) 0 1))
 )
