@@ -1,4 +1,9 @@
 (do
+	(defn spy [x] 
+		(console.log x)
+		x
+	)
+
 	(def encodeKey (atom {
 		"q" 1
 		"w" 2
@@ -12,8 +17,14 @@
 		"p" 512
 	}))
 	(def characterSet (atom "qwertyuiopasdfghjklzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM-=[]\\;',./`~!@#$%^&*()_+{}|:\"<>?"))
+	(def stats (atom {}))
 	(def encodedCharacter (atom 0))
 	(def inputMode (atom :keyDown))
+	(def start (atom nil))
+
+	(defn addStatistic [char time]
+		(reset! stats (assoc @stats char (conj (get stats char) time)))
+	)
 
 	(defn createFingerConfigurationInput [finger]
 		(let [
@@ -101,6 +112,12 @@
 						(set! (.-textContent toType) (subs (.-textContent toType) 1))
 					)
 					(hint (subs (.-textContent toType) 0 1))
+					(let [end (.now js/Date)]
+						(when @start
+							(addStatistic @encodedCharacter (spy (- end @start)))
+						)
+						(reset! start end)
+					)
 					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
 					(while (< (.-length (.-textContent toType)) 20)
 						(set! (.-textContent toType) (str (.-textContent toType) (nth @characterSet (rand (.-length @characterSet)))))
