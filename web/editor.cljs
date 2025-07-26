@@ -1,3 +1,5 @@
+(ns editor)
+
 (do
 	(def encodeKey {
 		"q" 1

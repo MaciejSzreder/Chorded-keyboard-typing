@@ -1,3 +1,5 @@
+(ns train)
+
 (do
 	(defn spy [x] 
 		(console.log x)
