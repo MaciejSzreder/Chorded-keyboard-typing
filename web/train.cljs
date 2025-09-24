@@ -25,7 +25,7 @@
 	(def start (atom nil))
 
 	(defn addStatistic [char time]
-		(reset! stats (assoc @stats char (conj (get stats char) time)))
+		(reset! stats (assoc @stats char (conj (get @stats char) time)))
 	)
 
 	(defn createFingerConfigurationInput [finger]
@@ -87,12 +87,48 @@
 	(.appendChild workspace toType)
 	(set! (.-textContent toType) @characterSet)
 	(hint (subs (.-textContent toType) 0 1))
+
+	(defn getRandomNotMeasuredCharacter []
+		(rand-nth (filter #(not (contains? @stats %)) @characterSet))
+	)
+	(defn getRandomMeasuredCharacter []
+		(let [
+			measured (filter #(contains? @stats %) @characterSet)
+			measurements (zipmap measured (map #(rand-nth (get @stats %)) measured))
+			r (* (rand) (reduce + (vals measurements)))
+			]
+			(reduce
+				(fn[acc [char time]]
+					(let [c (+ acc time)]
+						(if (< c r)
+							c
+							(reduced char)
+						)
+					)
+				)
+				0
+				measurements
+			)
+		)
+	)
+	(defn getRandomCharacter []
+		(if (< (rand) 0.5)
+			(if (every? (fn[char] (contains? @stats char)) @characterSet) ;; every character has been measured
+				(getRandomMeasuredCharacter)
+				(getRandomNotMeasuredCharacter)
+			)
+			(if (empty? @stats)
+				(getRandomNotMeasuredCharacter)
+				(getRandomMeasuredCharacter)
+			)
+		)
+	)
 	
 	(.addEventListener characterSetConfiguration "input" #(do
 		(reset! characterSet (.-value characterSetConfiguration))
 		(set! (.-textContent toType) "")
 		(while (< (.-length (.-textContent toType)) 20)
-			(set! (.-textContent toType) (str (.-textContent toType) (nth @characterSet (rand (.-length @characterSet)))))
+			(set! (.-textContent toType) (str (.-textContent toType) (getRandomCharacter)))
 		)
 		(hint (subs (.-textContent toType) 0 1))
 	))
@@ -112,17 +148,17 @@
 					(set! (.-textContent output) (str (.-textContent output) (.fromCharCode js/String @encodedCharacter)))
 					(when (= (.fromCharCode js/String @encodedCharacter) (subs (.-textContent toType) 0 1))
 						(set! (.-textContent toType) (subs (.-textContent toType) 1))
+						(let [end (.now js/Date)]
+							(when @start
+								(addStatistic (.fromCharCode js/String @encodedCharacter) (spy (- end @start)))
+							)
+							(reset! start end)
+						)
 					)
 					(hint (subs (.-textContent toType) 0 1))
-					(let [end (.now js/Date)]
-						(when @start
-							(addStatistic @encodedCharacter (spy (- end @start)))
-						)
-						(reset! start end)
-					)
 					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
 					(while (< (.-length (.-textContent toType)) 20)
-						(set! (.-textContent toType) (str (.-textContent toType) (nth @characterSet (rand (.-length @characterSet)))))
+						(set! (.-textContent toType) (str (.-textContent toType) (getRandomCharacter)))
 					)
 				)
 				(do

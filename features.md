@@ -6,7 +6,6 @@ to do:
 ### functionality
 🟩 UTF-8 keyboard  
 🟩 custom character encoding  
-🟩 generate string adaptively improving user skill  
 🟩 gradual include new characters  
 🟩 word mode  
 🟩 sentence mode  
@@ -35,6 +34,6 @@ done:
 ### functionality
 ✅ preview typing character  
 ✅ configurable key mapping  
-✅ random text mode  
+✅ generate string adaptively improving user skill (problematic character are more frequently) 
 ### platforms
 ✅ desktop browser 
