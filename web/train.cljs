@@ -28,6 +28,25 @@
 		(reset! stats (assoc @stats char (conj (get @stats char) time)))
 	)
 
+	(defn createDownloadingButton []
+		(let [button (.createElement js/document "button")]
+			(set! (.-textContent button) "Save statistics")
+			(.addEventListener button "click" 
+				#(let [
+					downloader (.createElement js/document "a")
+					blob (.createObjectURL js/URL (js/Blob. #js [(.stringify js/JSON (clj->js @stats))] #js {:type "application/json"}))
+					]
+					(.setAttribute downloader "href" blob)
+					(.setAttribute downloader "download" "statistics.json")
+					(.click downloader)
+					(.revokeObjectURL js/URL blob)
+				)
+			)
+			button
+		)
+	)
+	(.appendChild js/document.body (createDownloadingButton))
+
 	(defn createFingerConfigurationInput [finger]
 		(let [
 				input (.createElement js/document "input")
@@ -150,7 +169,8 @@
 						(set! (.-textContent toType) (subs (.-textContent toType) 1))
 						(let [end (.now js/Date)]
 							(when @start
-								(addStatistic (.fromCharCode js/String @encodedCharacter) (spy (- end @start)))
+								(addStatistic (.fromCharCode js/String @encodedCharacter) (- end @start))
+								(js/console.log "added measurement" (.fromCharCode js/String @encodedCharacter) (- end @start))
 							)
 							(reset! start end)
 						)

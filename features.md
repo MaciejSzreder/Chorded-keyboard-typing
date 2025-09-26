@@ -12,7 +12,7 @@ to do:
 🟩 library mode  
 🟩 pre word/sentence/library mode  
 🟩 help with anti-ghosting/key-rollover  
-🟩 import/export statistic  
+🟩 import statistic  
 🟩 estimation type time  
 🟩 mechanical errors mode  
 🟩 persistent store statistic in browser  
@@ -35,5 +35,6 @@ done:
 ✅ preview typing character  
 ✅ configurable key mapping  
 ✅ generate string adaptively improving user skill (problematic character are more frequently) 
+✅ export statistic 
 ### platforms
 ✅ desktop browser 
