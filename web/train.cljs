@@ -90,7 +90,13 @@
 	(set! (.-value characterSetConfiguration) @characterSet)
 	(.appendChild js/document.body characterSetConfiguration)
 
-	(def workspace (.createElement js/document "div"))
+	(defn createWorkspace []
+		(let [workspace (.createElement js/document "div")]
+			(.setAttribute workspace "style" "word-break: break-word")
+			workspace
+		)
+	)
+	(def workspace (createWorkspace))
 
 	(def output (.createElement js/document "span"))
 	(.setAttribute output "style" "font-size: 2em; font-family: monospace;")
