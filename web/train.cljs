@@ -35,7 +35,7 @@
 	(def downloadingButton
 		(gui/button
 			"Save statistics"
-			#(file/download "statistics.json" (.stringify js/JSON (clj->js @stats)))
+			#(file/download "statistics.edn" (pr-str @stats))
 		)
 	)
 	(gui/render downloadingButton)
