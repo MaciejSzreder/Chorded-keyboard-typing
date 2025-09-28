@@ -154,7 +154,7 @@
 						(gui/setText! output (str (gui/text output) (char @encodedCharacter)))
 						(when (= (char @encodedCharacter) (subs (gui/text toType) 0 1))
 							(gui/setText! toType (subs (gui/text toType) 1))
-							(let [end (.now js/Date)]
+							(let [end (system-time)]
 								(when @start
 									(addStatistic (char @encodedCharacter) (- end @start))
 									(js/console.log "added measurement" (char @encodedCharacter) (- end @start))
