@@ -1,6 +1,8 @@
-(ns train
-	(:require [ll.gui :as gui] [ll.file :as file])
-)
+(ns train (:require
+	[ll.gui :as gui]
+	[ll.file :as file]
+	[cljs.pprint :refer [char-code]]
+))
 
 (do
 	(defn spy [x] 
@@ -69,7 +71,7 @@
 	)
 	(defn hint [char]
 		(dotimes [finger 10]
-			(if (not= 0 (bit-and (Math.pow 2 finger) (.charCodeAt char 0)))
+			(if (not= 0 (bit-and (Math.pow 2 finger) (char-code char)))
 				(highlightFinger finger)
 				(unhighlightFinger finger)
 			)
@@ -119,7 +121,7 @@
 	} #(do
 		(reset! characterSet (gui/text characterSetConfiguration))
 		(gui/setText! toType "")
-		(while (< (.-length (gui/text toType)) 20)
+		(while (< (count (gui/text toType)) 20)
 			(gui/setText! toType (str (gui/text toType) (getRandomCharacter)))
 		)
 		(hint (subs (gui/text toType) 0 1))
@@ -142,27 +144,27 @@
 			#(when (contains? @encodeKey %)
 				(reset! inputMode :keyDown)
 				(reset! encodedCharacter (bit-or @encodedCharacter (get @encodeKey % 0)))
-				(gui/setText! preview (.fromCharCode js/String @encodedCharacter))	
+				(gui/setText! preview (char @encodedCharacter))	
 			),
 		:keyup
 			#(when (contains? @encodeKey %)
 				(if (= @inputMode :keyDown)
 					(do
 						(js/console.log "first release")
-						(gui/setText! output (str (gui/text output) (.fromCharCode js/String @encodedCharacter)))
-						(when (= (.fromCharCode js/String @encodedCharacter) (subs (gui/text toType) 0 1))
+						(gui/setText! output (str (gui/text output) (char @encodedCharacter)))
+						(when (= (char @encodedCharacter) (subs (gui/text toType) 0 1))
 							(gui/setText! toType (subs (gui/text toType) 1))
 							(let [end (.now js/Date)]
 								(when @start
-									(addStatistic (.fromCharCode js/String @encodedCharacter) (- end @start))
-									(js/console.log "added measurement" (.fromCharCode js/String @encodedCharacter) (- end @start))
+									(addStatistic (char @encodedCharacter) (- end @start))
+									(js/console.log "added measurement" (char @encodedCharacter) (- end @start))
 								)
 								(reset! start end)
 							)
 						)
 						(hint (subs (gui/text toType) 0 1))
 						(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey % 0))))
-						(while (< (.-length (gui/text toType)) 20)
+						(while (< (count (gui/text toType)) 20)
 							(gui/setText! toType (str (gui/text toType) (getRandomCharacter)))
 						)
 					)
@@ -172,7 +174,7 @@
 					)
 				)
 				(reset! inputMode :keyUp)
-				(gui/setText! preview (.fromCharCode js/String @encodedCharacter))
+				(gui/setText! preview (char @encodedCharacter))
 			)
 	})
 )
