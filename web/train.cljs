@@ -60,6 +60,8 @@
 					(filter (fn[[key code]] (not= code encoded)) @encodeKey)
 				))
 			))
+			(.addEventListener input "keydown" #(.stopPropagation %))
+			(.addEventListener input "keyup" #(.stopPropagation %))
 			input
 		)
 	)
@@ -87,6 +89,8 @@
 	)
 
 	(def characterSetConfiguration (.createElement js/document "input"))
+	(.addEventListener characterSetConfiguration "keydown" #(.stopPropagation %))
+	(.addEventListener characterSetConfiguration "keyup" #(.stopPropagation %))
 	(set! (.-value characterSetConfiguration) @characterSet)
 	(.appendChild js/document.body characterSetConfiguration)
 
@@ -164,7 +168,7 @@
 			(reset! encodedCharacter (bit-or @encodedCharacter (get @encodeKey (.-key %) 0)))
 			(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
 		
-	))
+	) false)
 	(.addEventListener js/document "keyup" #(
 		when (contains? @encodeKey (.-key %))
 			(if (= @inputMode :keyDown)
@@ -194,7 +198,7 @@
 			)
 			(reset! inputMode :keyUp)
 			(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
-	))
+	) false)
 
 	(.appendChild js/document.body workspace)
 )
