@@ -1,4 +1,6 @@
-(ns train)
+(ns train
+	(:require [ll.gui :as gui])
+)
 
 (do
 	(defn spy [x] 
@@ -28,56 +30,50 @@
 		(reset! stats (assoc @stats char (conj (get @stats char) time)))
 	)
 
-	(defn createDownloadingButton []
-		(let [button (.createElement js/document "button")]
-			(set! (.-textContent button) "Save statistics")
-			(.addEventListener button "click" 
-				#(let [
-					downloader (.createElement js/document "a")
-					blob (.createObjectURL js/URL (js/Blob. #js [(.stringify js/JSON (clj->js @stats))] #js {:type "application/json"}))
-					]
-					(.setAttribute downloader "href" blob)
-					(.setAttribute downloader "download" "statistics.json")
-					(.click downloader)
-					(.revokeObjectURL js/URL blob)
-				)
+	(def downloadingButton
+		(gui/button
+			"Save statistics"
+			#(let [
+				downloader (.createElement js/document "a")
+				blob (.createObjectURL js/URL (js/Blob. #js [(.stringify js/JSON (clj->js @stats))] #js {:type "application/json"}))
+				]
+				(.setAttribute downloader "href" blob)
+				(.setAttribute downloader "download" "statistics.json")
+				(.click downloader)
+				(.revokeObjectURL js/URL blob)
 			)
-			button
 		)
 	)
-	(.appendChild js/document.body (createDownloadingButton))
+	(gui/render downloadingButton)
 
 	(defn createFingerConfigurationInput [finger]
 		(let [
-				input (.createElement js/document "input")
 				encoded (Math/pow 2 finger)
-			]
-			(.setAttribute input "style" "font-size: 1em; font-family: monospace; width:2em; text-align: center")
-			(set! (.-value input) (some (fn [[key code]] (when (= code encoded) key)) @encodeKey))
-			(.addEventListener input "input" #(do
-				(reset! encodeKey (merge
-					(zipmap (.-value input) (map (fn [] encoded) (.-value input)))
-					(filter (fn[[key code]] (not= code encoded)) @encodeKey)
+				input (gui/textField (some (fn[[key code]] (when (= code encoded) key)) @encodeKey) {
+					:width :2em,
+					:height :2em,
+					:text-align :center,
+					:font-family :monospace
+				} #(this-as this
+					(reset! encodeKey (merge
+						(zipmap (gui/text this) (map (fn [] encoded) (gui/text this)))
+						(filter (fn[[key code]] (not= code encoded)) @encodeKey)
+					))
 				))
-			))
-			(.addEventListener input "keydown" #(.stopPropagation %))
-			(.addEventListener input "keyup" #(.stopPropagation %))
+			]
 			input
 		)
 	)
 
-	(def keyMapping (.createElement js/document "div"))
 	(def fingers (map createFingerConfigurationInput (range 10)))
-	(doseq [finger fingers]
-		(.appendChild keyMapping finger)
-	)
-	(.appendChild js/document.body keyMapping)
+	(def keyMapping (gui/container fingers {}))
+	(gui/render keyMapping)
 	
 	(defn highlightFinger [n]
-		(.setProperty (.-style (nth fingers n)) "background-color" "yellow")
+		(gui/set! (nth fingers n) {:background-color :yellow})
 	)
 	(defn unhighlightFinger [n]
-		(.removeProperty (.-style (nth fingers n)) "background-color")
+		(gui/unset! (nth fingers n) [:background-color])
 	)
 	(defn hint [char]
 		(dotimes [finger 10]
@@ -87,35 +83,6 @@
 			)
 		)
 	)
-
-	(def characterSetConfiguration (.createElement js/document "input"))
-	(.addEventListener characterSetConfiguration "keydown" #(.stopPropagation %))
-	(.addEventListener characterSetConfiguration "keyup" #(.stopPropagation %))
-	(set! (.-value characterSetConfiguration) @characterSet)
-	(.appendChild js/document.body characterSetConfiguration)
-
-	(defn createWorkspace []
-		(let [workspace (.createElement js/document "div")]
-			(.setAttribute workspace "style" "word-break: break-word")
-			workspace
-		)
-	)
-	(def workspace (createWorkspace))
-
-	(def output (.createElement js/document "span"))
-	(.setAttribute output "style" "font-size: 2em; font-family: monospace;")
-	(.appendChild workspace output)
-
-	(def preview (.createElement js/document "span"))
-	(.setAttribute preview "style" "font-size: 2em; font-family: monospace; color: red;")
-	(.setAttribute preview "id" "preview")
-	(.appendChild workspace preview)
-
-	(def toType (.createElement js/document "span"))
-	(.setAttribute toType "style" "font-size: 2em; font-family: monospace;")
-	(.appendChild workspace toType)
-	(set! (.-textContent toType) @characterSet)
-	(hint (subs (.-textContent toType) 0 1))
 
 	(defn getRandomNotMeasuredCharacter []
 		(rand-nth (filter #(not (contains? @stats %)) @characterSet))
@@ -152,53 +119,68 @@
 			)
 		)
 	)
-	
-	(.addEventListener characterSetConfiguration "input" #(do
-		(reset! characterSet (.-value characterSetConfiguration))
-		(set! (.-textContent toType) "")
-		(while (< (.-length (.-textContent toType)) 20)
-			(set! (.-textContent toType) (str (.-textContent toType) (getRandomCharacter)))
-		)
-		(hint (subs (.-textContent toType) 0 1))
-	))
 
-	(.addEventListener js/document "keydown" #(
-		when (contains? @encodeKey (.-key %))
-			(reset! inputMode :keyDown)
-			(reset! encodedCharacter (bit-or @encodedCharacter (get @encodeKey (.-key %) 0)))
-			(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
-		
-	) false)
-	(.addEventListener js/document "keyup" #(
-		when (contains? @encodeKey (.-key %))
-			(if (= @inputMode :keyDown)
-				(do
-					(js/console.log "first release")
-					(set! (.-textContent output) (str (.-textContent output) (.fromCharCode js/String @encodedCharacter)))
-					(when (= (.fromCharCode js/String @encodedCharacter) (subs (.-textContent toType) 0 1))
-						(set! (.-textContent toType) (subs (.-textContent toType) 1))
-						(let [end (.now js/Date)]
-							(when @start
-								(addStatistic (.fromCharCode js/String @encodedCharacter) (- end @start))
-								(js/console.log "added measurement" (.fromCharCode js/String @encodedCharacter) (- end @start))
+	(def toType (gui/inline [@characterSet] {}))
+	(def characterSetConfiguration (gui/textField @characterSet {
+		:width :100ch,
+		:font-family :monospace,
+	} #(do
+		(reset! characterSet (gui/text characterSetConfiguration))
+		(gui/setText! toType "")
+		(while (< (.-length (gui/text toType)) 20)
+			(gui/setText! toType (str (gui/text toType) (getRandomCharacter)))
+		)
+		(hint (subs (gui/text toType) 0 1))
+	)))
+	(gui/render characterSetConfiguration)
+
+	(def output (gui/inline [] {}))
+	(def preview (gui/inline [] {:color :red}))
+	(def workspace (gui/container [output, preview, toType] {
+		:font-size :2em,
+		:font-family :monospace,
+		:word-break :break-word
+	}))
+	(gui/render workspace)
+
+	(hint (subs (gui/text toType) 0 1))
+
+	(gui/registerListeners {
+		:keydown
+			#(when (contains? @encodeKey %)
+				(reset! inputMode :keyDown)
+				(reset! encodedCharacter (bit-or @encodedCharacter (get @encodeKey % 0)))
+				(gui/setText! preview (.fromCharCode js/String @encodedCharacter))	
+			),
+		:keyup
+			#(when (contains? @encodeKey %)
+				(if (= @inputMode :keyDown)
+					(do
+						(js/console.log "first release")
+						(gui/setText! output (str (gui/text output) (.fromCharCode js/String @encodedCharacter)))
+						(when (= (.fromCharCode js/String @encodedCharacter) (subs (gui/text toType) 0 1))
+							(gui/setText! toType (subs (gui/text toType) 1))
+							(let [end (.now js/Date)]
+								(when @start
+									(addStatistic (.fromCharCode js/String @encodedCharacter) (- end @start))
+									(js/console.log "added measurement" (.fromCharCode js/String @encodedCharacter) (- end @start))
+								)
+								(reset! start end)
 							)
-							(reset! start end)
+						)
+						(hint (subs (gui/text toType) 0 1))
+						(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey % 0))))
+						(while (< (.-length (gui/text toType)) 20)
+							(gui/setText! toType (str (gui/text toType) (getRandomCharacter)))
 						)
 					)
-					(hint (subs (.-textContent toType) 0 1))
-					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
-					(while (< (.-length (.-textContent toType)) 20)
-						(set! (.-textContent toType) (str (.-textContent toType) (getRandomCharacter)))
+					(do
+						(js/console.log "next release")
+						(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey % 0))))
 					)
 				)
-				(do
-					(js/console.log "next release")
-					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey (.-key %) 0))))
-				)
+				(reset! inputMode :keyUp)
+				(gui/setText! preview (.fromCharCode js/String @encodedCharacter))
 			)
-			(reset! inputMode :keyUp)
-			(set! (.-textContent preview) (.fromCharCode js/String @encodedCharacter))
-	) false)
-
-	(.appendChild js/document.body workspace)
+	})
 )
