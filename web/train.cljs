@@ -1,15 +1,11 @@
 (ns train (:require
 	[ll.gui :as gui]
 	[ll.file :as file]
+	[ll.log :refer [log peek spy]]
 	[cljs.pprint :refer [char-code]]
 ))
 
 (do
-	(defn spy [x] 
-		(console.log x)
-		x
-	)
-
 	(def encodeKey (atom {
 		"q" 1
 		"w" 2
@@ -150,14 +146,14 @@
 			#(when (contains? @encodeKey %)
 				(if (= @inputMode :keyDown)
 					(do
-						(js/console.log "first release")
+						(log "first release")
 						(gui/setText! output (str (gui/text output) (char @encodedCharacter)))
 						(when (= (char @encodedCharacter) (subs (gui/text toType) 0 1))
 							(gui/setText! toType (subs (gui/text toType) 1))
 							(let [end (system-time)]
 								(when @start
 									(addStatistic (char @encodedCharacter) (- end @start))
-									(js/console.log "added measurement" (char @encodedCharacter) (- end @start))
+									(log "added measurement" (char @encodedCharacter) (- end @start))
 								)
 								(reset! start end)
 							)
@@ -169,7 +165,7 @@
 						)
 					)
 					(do
-						(js/console.log "next release")
+						(log "next release")
 						(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey % 0))))
 					)
 				)
