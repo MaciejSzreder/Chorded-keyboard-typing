@@ -1,5 +1,5 @@
 (ns train
-	(:require [ll.gui :as gui])
+	(:require [ll.gui :as gui] [ll.file :as file])
 )
 
 (do
@@ -33,15 +33,7 @@
 	(def downloadingButton
 		(gui/button
 			"Save statistics"
-			#(let [
-				downloader (.createElement js/document "a")
-				blob (.createObjectURL js/URL (js/Blob. #js [(.stringify js/JSON (clj->js @stats))] #js {:type "application/json"}))
-				]
-				(.setAttribute downloader "href" blob)
-				(.setAttribute downloader "download" "statistics.json")
-				(.click downloader)
-				(.revokeObjectURL js/URL blob)
-			)
+			#(file/download "statistics.json" (.stringify js/JSON (clj->js @stats)))
 		)
 	)
 	(gui/render downloadingButton)
