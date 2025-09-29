@@ -67,7 +67,7 @@
 	)
 	(defn hint [char]
 		(dotimes [finger 10]
-			(if (not= 0 (bit-and (Math.pow 2 finger) (char-code char)))
+			(if (not= 0 (bit-and (Math/pow 2 finger) (char-code char)))
 				(highlightFinger finger)
 				(unhighlightFinger finger)
 			)
