@@ -1,8 +1,7 @@
 (ns train (:require
 	[ll.gui :as gui]
-	[ll.file :as file]
 	[ll.log :refer [log peek spy]]
-	[cljs.pprint :refer [char-code]]
+	[logic :refer [saveStatistics! updateEncoding! hint updateCharacterSet! keyDown! keyUp!]]
 ))
 
 (do
@@ -24,14 +23,10 @@
 	(def inputMode (atom :keyDown))
 	(def start (atom nil))
 
-	(defn addStatistic [char time]
-		(reset! stats (assoc @stats char (conj (get @stats char) time)))
-	)
-
 	(def downloadingButton
 		(gui/button
 			"Save statistics"
-			#(file/download "statistics.edn" (pr-str @stats))
+			#(saveStatistics! @stats)
 		)
 	)
 	(gui/render downloadingButton)
@@ -45,10 +40,7 @@
 					:text-align :center,
 					:font-family :monospace
 				} #(this-as this
-					(reset! encodeKey (merge
-						(zipmap (gui/text this) (map (fn [] encoded) (gui/text this)))
-						(filter (fn[[key code]] (not= code encoded)) @encodeKey)
-					))
+					(updateEncoding! encodeKey (gui/text this) encoded)
 				))
 			]
 			input
@@ -58,70 +50,13 @@
 	(def fingers (map createFingerConfigurationInput (range 10)))
 	(def keyMapping (gui/container fingers {}))
 	(gui/render keyMapping)
-	
-	(defn highlightFinger [n]
-		(gui/set! (nth fingers n) {:background-color :yellow})
-	)
-	(defn unhighlightFinger [n]
-		(gui/unset! (nth fingers n) [:background-color])
-	)
-	(defn hint [char]
-		(dotimes [finger 10]
-			(if (not= 0 (bit-and (Math/pow 2 finger) (char-code char)))
-				(highlightFinger finger)
-				(unhighlightFinger finger)
-			)
-		)
-	)
-
-	(defn getRandomNotMeasuredCharacter []
-		(rand-nth (filter #(not (contains? @stats %)) @characterSet))
-	)
-	(defn getRandomMeasuredCharacter []
-		(let [
-			measured (filter #(contains? @stats %) @characterSet)
-			measurements (zipmap measured (map #(rand-nth (get @stats %)) measured))
-			r (* (rand) (reduce + (vals measurements)))
-			]
-			(reduce
-				(fn[acc [char time]]
-					(let [c (+ acc time)]
-						(if (< c r)
-							c
-							(reduced char)
-						)
-					)
-				)
-				0
-				measurements
-			)
-		)
-	)
-	(defn getRandomCharacter []
-		(if (< (rand) 0.5)
-			(if (every? (fn[char] (contains? @stats char)) @characterSet) ;; every character has been measured
-				(getRandomMeasuredCharacter)
-				(getRandomNotMeasuredCharacter)
-			)
-			(if (empty? @stats)
-				(getRandomNotMeasuredCharacter)
-				(getRandomMeasuredCharacter)
-			)
-		)
-	)
 
 	(def toType (gui/inline [@characterSet] {}))
 	(def characterSetConfiguration (gui/textField @characterSet {
 		:width :100ch,
 		:font-family :monospace,
-	} #(do
-		(reset! characterSet (gui/text characterSetConfiguration))
-		(gui/setText! toType "")
-		(while (< (count (gui/text toType)) 20)
-			(gui/setText! toType (str (gui/text toType) (getRandomCharacter)))
-		)
-		(hint (subs (gui/text toType) 0 1))
-	)))
+	} #(updateCharacterSet! characterSet (gui/text characterSetConfiguration) toType @stats fingers)
+	))
 	(gui/render characterSetConfiguration)
 
 	(def output (gui/inline [] {}))
@@ -133,44 +68,12 @@
 	}))
 	(gui/render workspace)
 
-	(hint (subs (gui/text toType) 0 1))
+	(hint fingers (subs (gui/text toType) 0 1))
 
 	(gui/registerListeners {
 		:keydown
-			#(when (contains? @encodeKey %)
-				(reset! inputMode :keyDown)
-				(reset! encodedCharacter (bit-or @encodedCharacter (get @encodeKey % 0)))
-				(gui/setText! preview (char @encodedCharacter))	
-			),
+			#(keyDown! % encodeKey inputMode encodedCharacter preview),
 		:keyup
-			#(when (contains? @encodeKey %)
-				(if (= @inputMode :keyDown)
-					(do
-						(log "first release")
-						(gui/setText! output (str (gui/text output) (char @encodedCharacter)))
-						(when (= (char @encodedCharacter) (subs (gui/text toType) 0 1))
-							(gui/setText! toType (subs (gui/text toType) 1))
-							(let [end (system-time)]
-								(when @start
-									(addStatistic (char @encodedCharacter) (- end @start))
-									(log "added measurement" (char @encodedCharacter) (- end @start))
-								)
-								(reset! start end)
-							)
-						)
-						(hint (subs (gui/text toType) 0 1))
-						(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey % 0))))
-						(while (< (count (gui/text toType)) 20)
-							(gui/setText! toType (str (gui/text toType) (getRandomCharacter)))
-						)
-					)
-					(do
-						(log "next release")
-						(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get @encodeKey % 0))))
-					)
-				)
-				(reset! inputMode :keyUp)
-				(gui/setText! preview (char @encodedCharacter))
-			)
+			#(keyUp! % encodeKey inputMode encodedCharacter preview output toType start stats fingers characterSet)
 	})
 )
