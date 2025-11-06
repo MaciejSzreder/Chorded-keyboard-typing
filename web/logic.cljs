@@ -1,11 +1,10 @@
 (ns logic (:require
 	[cljs.pprint :refer [char-code]]
 	[ll.gui :as gui]
-	[ll.file :as file]
 	[ll.log :refer [log peek spy]]
 ))
-(defn saveStatistics! [stats]
-	(file/download "statistics.edn" (pr-str stats))
+(defn saveStatistics! [env state]
+	(env :download "statistics.edn" (pr-str (state :stats)))
 )
 
 (defn updateEncoding! [controller keys code]

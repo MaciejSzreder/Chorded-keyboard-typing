@@ -1,6 +1,7 @@
 (ns train (:require
 	[ll.gui :as gui]
 	[ll.log :refer [log peek spy]]
+	[environment :refer [controller] :rename {controller env}]
 	[state :refer [controller]]
 	[logic :refer [saveStatistics! updateEncoding! hint updateCharacterSet! keyDown! keyUp!]]
 ))
@@ -9,7 +10,7 @@
 	(def downloadingButton
 		(gui/button
 			"Save statistics"
-			#(saveStatistics! ((controller) :stats))
+			#(saveStatistics! env (controller))
 		)
 	)
 	(gui/render downloadingButton)
