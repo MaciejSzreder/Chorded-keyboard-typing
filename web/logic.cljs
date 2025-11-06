@@ -3,18 +3,16 @@
 	[ll.gui :as gui]
 	[ll.file :as file]
 	[ll.log :refer [log peek spy]]
+	[state]
 ))
 (defn saveStatistics! [stats]
 	(file/download "statistics.edn" (pr-str stats))
 )
-(defn addStatistic! [stats char time]
-	(reset! stats (assoc @stats char (conj (get @stats char) time)))
-)
 
-(defn updateEncoding! [encoding keys code]
-	(reset! encoding (merge
+(defn updateEncoding! [state keys code]
+	(reset! (:encodeKey state) (merge
 		(zipmap keys (map (fn[] code) keys))
-		(filter (fn[[key encoding]] (not= code encoding)) @encoding)
+		(filter (fn[[key encoding]] (not= code encoding)) @(:encodeKey state))
 	))
 )
 
@@ -96,7 +94,7 @@
 					(gui/setText! toType (subs (gui/text toType) 1))
 					(let [end (system-time)]
 						(when @start
-							(addStatistic! stats (char @encodedCharacter) (- end @start))
+							(state/addStatistic! stats (char @encodedCharacter) (- end @start))
 							(log "added measurement" (char @encodedCharacter) (- end @start))
 						)
 						(reset! start end)

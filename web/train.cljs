@@ -1,32 +1,15 @@
 (ns train (:require
 	[ll.gui :as gui]
 	[ll.log :refer [log peek spy]]
+	[state :refer [state]]
 	[logic :refer [saveStatistics! updateEncoding! hint updateCharacterSet! keyDown! keyUp!]]
 ))
 
 (do
-	(def encodeKey (atom {
-		"q" 1
-		"w" 2
-		"e" 4
-		"f" 8
-		"c" 16
-		"m" 32
-		"j" 64
-		"i" 128
-		"o" 256
-		"p" 512
-	}))
-	(def characterSet (atom "qwertyuiopasdfghjklzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM-=[]\\;',./`~!@#$%^&*()_+{}|:\"<>?"))
-	(def stats (atom {}))
-	(def encodedCharacter (atom 0))
-	(def inputMode (atom :keyDown))
-	(def start (atom nil))
-
 	(def downloadingButton
 		(gui/button
 			"Save statistics"
-			#(saveStatistics! @stats)
+			#(saveStatistics! @(:stats state))
 		)
 	)
 	(gui/render downloadingButton)
@@ -34,13 +17,13 @@
 	(defn createFingerConfigurationInput [finger]
 		(let [
 				encoded (Math/pow 2 finger)
-				input (gui/textField (some (fn[[key code]] (when (= code encoded) key)) @encodeKey) {
+				input (gui/textField (some (fn[[key code]] (when (= code encoded) key)) @(:encodeKey state)) {
 					:width :2em,
 					:height :2em,
 					:text-align :center,
 					:font-family :monospace
 				} #(this-as this
-					(updateEncoding! encodeKey (gui/text this) encoded)
+					(updateEncoding! state (gui/text this) encoded)
 				))
 			]
 			input
@@ -51,11 +34,11 @@
 	(def keyMapping (gui/container fingers {}))
 	(gui/render keyMapping)
 
-	(def toType (gui/inline [@characterSet] {}))
-	(def characterSetConfiguration (gui/textField @characterSet {
+	(def toType (gui/inline [@(:characterSet state)] {}))
+	(def characterSetConfiguration (gui/textField @(:characterSet state) {
 		:width :100ch,
 		:font-family :monospace,
-	} #(updateCharacterSet! characterSet (gui/text characterSetConfiguration) toType @stats fingers)
+	} #(updateCharacterSet! (:characterSet state) (gui/text characterSetConfiguration) toType @(:stats state) fingers)
 	))
 	(gui/render characterSetConfiguration)
 
@@ -72,8 +55,8 @@
 
 	(gui/registerListeners {
 		:keydown
-			#(keyDown! % encodeKey inputMode encodedCharacter preview),
+			#(keyDown! % (:encodeKey state) (:inputMode state) (:encodedCharacter state) preview),
 		:keyup
-			#(keyUp! % encodeKey inputMode encodedCharacter preview output toType start stats fingers characterSet)
+			#(keyUp! % (:encodeKey state) (:inputMode state) (:encodedCharacter state) preview output toType (:start state) (:stats state) fingers (:characterSet state))
 	})
 )
