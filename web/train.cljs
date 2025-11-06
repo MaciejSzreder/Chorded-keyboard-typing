@@ -9,7 +9,7 @@
 	(def downloadingButton
 		(gui/button
 			"Save statistics"
-			#(saveStatistics! @((controller) :stats))
+			#(saveStatistics! ((controller) :stats))
 		)
 	)
 	(gui/render downloadingButton)
@@ -17,7 +17,7 @@
 	(defn createFingerConfigurationInput [finger]
 		(let [
 				encoded (Math/pow 2 finger)
-				input (gui/textField (some (fn[[key code]] (when (= code encoded) key)) @((controller) :encodeKey)) {
+				input (gui/textField (some (fn[[key code]] (when (= code encoded) key)) ((controller) :encodeKey)) {
 					:width :2em,
 					:height :2em,
 					:text-align :center,
@@ -34,8 +34,8 @@
 	(def keyMapping (gui/container fingers {}))
 	(gui/render keyMapping)
 
-	(def toType (gui/inline [@((controller) :characterSet)] {}))
-	(def characterSetConfiguration (gui/textField @((controller) :characterSet) {
+	(def toType (gui/inline [((controller) :characterSet)] {}))
+	(def characterSetConfiguration (gui/textField ((controller) :characterSet) {
 		:width :100ch,
 		:font-family :monospace,
 	} #(updateCharacterSet! (controller) (gui/text characterSetConfiguration) toType fingers)

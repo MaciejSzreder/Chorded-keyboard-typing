@@ -3,16 +3,15 @@
 	[ll.gui :as gui]
 	[ll.file :as file]
 	[ll.log :refer [log peek spy]]
-	[state :refer [controller]]
 ))
 (defn saveStatistics! [stats]
 	(file/download "statistics.edn" (pr-str stats))
 )
 
 (defn updateEncoding! [controller keys code]
-	(reset! (controller :encodeKey) (merge
+	(controller :encodeKey (merge
 		(zipmap keys (map (fn[] code) keys))
-		(filter (fn[[key encoding]] (not= code encoding)) @(controller :encodeKey))
+		(filter (fn[[key encoding]] (not= code encoding)) (controller :encodeKey))
 	))
 )
 
@@ -68,62 +67,65 @@
 )
 
 (defn updateCharacterSet! [controller newCharacterSet toType fingers]
-	(reset! (controller :characterSet) newCharacterSet)
+	(controller :characterSet newCharacterSet)
 	(gui/setText! toType "")
 	(while (< (count (gui/text toType)) 20)
-		(gui/setText! toType (str (gui/text toType) (getRandomCharacter @(controller :stats) @(controller :characterSet))))
+		(gui/setText! toType (str (gui/text toType) (getRandomCharacter (controller :stats) (controller :characterSet))))
 	)
 	(hint fingers (subs (gui/text toType) 0 1))
 )
 
 (defn keyDown! [key controller preview]
 	(let [
-		encodeKey @(controller :encodeKey)
+		encodeKey (controller :encodeKey)
 		encodedCharacter (controller :encodedCharacter)
 	]
 		(when (contains? encodeKey key)
-			(reset! (controller :inputMode) :keyDown)
-			(reset! encodedCharacter (bit-or @encodedCharacter (get encodeKey key 0)))
-			(gui/setText! preview (char @encodedCharacter))	
+			(controller :inputMode :keyDown)
+			(let [newCharacter (bit-or encodedCharacter (get encodeKey key 0))]
+				(controller :encodedCharacter newCharacter)
+				(gui/setText! preview (char newCharacter))
+			)	
 		)
 	)
 )
 
 (defn keyUp! [key controller preview output toType fingers]
 	(let [
-		encodeKey @(controller :encodeKey)
+		encodeKey (controller :encodeKey)
 		inputMode (controller :inputMode)
 		encodedCharacter (controller :encodedCharacter)
+		newCharacter (bit-and encodedCharacter (bit-not(get encodeKey key 0)))
 		start (controller :start)
 	]
 		(when (contains? encodeKey key)
-			(if (= @inputMode :keyDown)
+			(if (= inputMode :keyDown)
 				(do
 					(log "first release")
-					(gui/setText! output (str (gui/text output) (char @encodedCharacter)))
-					(when (= (char @encodedCharacter) (subs (gui/text toType) 0 1))
+					(gui/setText! output (str (gui/text output) (char encodedCharacter)))
+					(when (= (char encodedCharacter) (subs (gui/text toType) 0 1))
 						(gui/setText! toType (subs (gui/text toType) 1))
 						(let [end (system-time)]
-							(when @start
-								(controller :addStatistic (char @encodedCharacter) (- end @start))
-								(log "added measurement" (char @encodedCharacter) (- end @start))
+							(when start
+								(controller :addStatistic (char encodedCharacter) (- end start))
+								(log "added measurement" (char encodedCharacter) (- end start))
 							)
-							(reset! start end)
+							(controller :start end)
 						)
 					)
 					(hint fingers (subs (gui/text toType) 0 1))
-					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey key 0))))
+					(controller :encodedCharacter newCharacter)
 					(while (< (count (gui/text toType)) 20)
-						(gui/setText! toType (str (gui/text toType) (getRandomCharacter @(controller :stats) @(controller :characterSet))))
+						(gui/setText! toType (str (gui/text toType) (getRandomCharacter (controller :stats) (controller :characterSet))))
 					)
 				)
 				(do
 					(log "next release")
-					(reset! encodedCharacter (bit-and @encodedCharacter (bit-not(get encodeKey key 0))))
+					(controller :encodedCharacter newCharacter)
 				)
 			)
-			(reset! inputMode :keyUp)
-			(gui/setText! preview (char @encodedCharacter))
+			(controller :inputMode :keyUp)
+			(gui/setText! preview (char newCharacter))
 		)
 	)
 )

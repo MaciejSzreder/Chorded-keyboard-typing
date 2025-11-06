@@ -20,7 +20,10 @@
 	:start (atom nil)
 })
 
-(defn property [name] (fn[state] (get state name)))
+(defn property [name] (fn
+	([state] @(get state name))
+	([state value] (reset! (get state name) value))
+))
 
 (def actions {
 	:encodeKey (property :encodeKey)
