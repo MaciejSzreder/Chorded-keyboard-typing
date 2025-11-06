@@ -20,6 +20,23 @@
 	:start (atom nil)
 })
 
-(defn addStatistic! [stats char time]
-	(reset! stats (assoc @stats char (conj (get @stats char) time)))
+(defn property [name] (fn[state] (get state name)))
+
+(def actions {
+	:encodeKey (property :encodeKey)
+	:characterSet (property :characterSet)
+	:stats (property :stats )
+	:addStatistic (fn[state char time]
+		(reset! (:stats state) (assoc @(:stats state) char (conj (get @(:stats state) char) time)))
+	)
+	:encodedCharacter (property :encodedCharacter)
+	:inputMode (property :inputMode)
+	:start (property :start)
+})
+
+(defn controller
+	([] (controller state))
+	([state] (fn[action & args]
+		(apply (get actions action) state args)
+	))
 )
