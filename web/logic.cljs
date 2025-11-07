@@ -104,7 +104,7 @@
 					(gui/setText! output (str (gui/text output) (char encodedCharacter)))
 					(when (= (char encodedCharacter) (subs (gui/text toType) 0 1))
 						(gui/setText! toType (subs (gui/text toType) 1))
-						(let [end (system-time)]
+						(let [end (env :now)]
 							(when start
 								(controller :addStatistic (char encodedCharacter) (- end start))
 								(env :log "added measurement" (char encodedCharacter) (- end start))

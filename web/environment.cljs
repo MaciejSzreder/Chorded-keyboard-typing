@@ -8,6 +8,7 @@
 	:rand-nth rand-nth
 	:rand rand
 	:log log
+	:now system-time
 })
 
 (defn controller [action & args]
