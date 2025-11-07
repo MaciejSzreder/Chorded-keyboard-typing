@@ -100,14 +100,14 @@
 		(when (contains? encodeKey key)
 			(if (= inputMode :keyDown)
 				(do
-					(log "first release")
+					(env :log "first release")
 					(gui/setText! output (str (gui/text output) (char encodedCharacter)))
 					(when (= (char encodedCharacter) (subs (gui/text toType) 0 1))
 						(gui/setText! toType (subs (gui/text toType) 1))
 						(let [end (system-time)]
 							(when start
 								(controller :addStatistic (char encodedCharacter) (- end start))
-								(log "added measurement" (char encodedCharacter) (- end start))
+								(env :log "added measurement" (char encodedCharacter) (- end start))
 							)
 							(controller :start end)
 						)
@@ -119,7 +119,7 @@
 					)
 				)
 				(do
-					(log "next release")
+					(env :log "next release")
 					(controller :encodedCharacter newCharacter)
 				)
 			)
