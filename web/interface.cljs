@@ -61,6 +61,15 @@
 	)
 )
 
+(defn fingersController [fingers]
+	(fn[finger action] 
+		(case action
+			:highlight (gui/set! (nth fingers finger) {:background-color :yellow})
+			:unhighlight (gui/unset! (nth fingers finger) [:background-color])
+		)
+	)
+)
+
 (defn controller
 	([behavior]
 		(gui/registerListeners {
@@ -77,14 +86,17 @@
 			(gui/render (keyMapping fingers))
 			(gui/render (characterSetConfiguration (:loadCharacterSet behavior) (:setCharacterSet behavior)))
 			(gui/render (workspace output preview toType))
-			(hint fingers (subs (gui/text toType) 0 1))
-			(let [interface {
-				:fingers #(do fingers)
-				:preview (textFieldController preview)
-				:output (textFieldController output)
-				:toType (textFieldController toType)
-			}]
-				(fn[action & args] (apply (action interface) args))
+			(let [
+				interface {
+					:fingers (fingersController fingers)
+					:preview (textFieldController preview)
+					:output (textFieldController output)
+					:toType (textFieldController toType)
+				}
+				controller (fn[action & args] (apply (action interface) args))
+			]
+				(hint controller (subs (gui/text toType) 0 1))
+				controller
 			)
 		)
 	)

@@ -1,6 +1,5 @@
 (ns logic (:require
 	[cljs.pprint :refer [char-code]]
-	[ll.gui :as gui]
 	[ll.log :refer [log peek spy]]
 ))
 (defn saveStatistics! [env state]
@@ -14,17 +13,11 @@
 	))
 )
 
-(defn highlightFinger [fingers n]
-	(gui/set! (nth fingers n) {:background-color :yellow})
-)
-(defn unhighlightFinger [fingers n]
-	(gui/unset! (nth fingers n) [:background-color])
-)
-(defn hint [fingers char]
+(defn hint [interface char]
 	(dotimes [finger 10]
 		(if (not= 0 (bit-and (Math/pow 2 finger) (char-code char)))
-			(highlightFinger fingers finger)
-			(unhighlightFinger fingers finger)
+			(interface :fingers finger :highlight)
+			(interface :fingers finger :unhighlight)
 		)
 	)
 )
@@ -71,7 +64,7 @@
 	(while (< (count (interface :toType)) 20)
 		(interface :toType (str (interface :toType) (getRandomCharacter env (controller :stats) (controller :characterSet))))
 	)
-	(hint (interface :fingers) (subs (interface :toType) 0 1))
+	(hint interface (subs (interface :toType) 0 1))
 )
 
 (defn keyDown! [key controller interface]
@@ -113,7 +106,7 @@
 							(controller :start end)
 						)
 					)
-					(hint (interface :fingers) (subs toType 0 1))
+					(hint interface (subs toType 0 1))
 					(controller :encodedCharacter newCharacter)
 					(while (< (count (interface :toType)) 20)
 						(interface :toType (str (interface :toType) (getRandomCharacter env (controller :stats) (controller :characterSet))))
