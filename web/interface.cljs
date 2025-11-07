@@ -54,6 +54,13 @@
 	})
 )
 
+(defn textFieldController [textField]
+	(fn
+		([] (gui/text textField))
+		([newText] (gui/setText! textField newText))
+	)
+)
+
 (defn controller
 	([behavior]
 		(gui/registerListeners {
@@ -72,12 +79,12 @@
 			(gui/render (workspace output preview toType))
 			(hint fingers (subs (gui/text toType) 0 1))
 			(let [interface {
-				:fingers fingers
-				:preview preview
-				:output output
-				:toType toType
+				:fingers #(do fingers)
+				:preview (textFieldController preview)
+				:output (textFieldController output)
+				:toType (textFieldController toType)
 			}]
-				(fn[action] (action interface))
+				(fn[action & args] (apply (action interface) args))
 			)
 		)
 	)

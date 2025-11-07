@@ -66,17 +66,15 @@
 )
 
 (defn updateCharacterSet! [env controller interface newCharacterSet]
-	(let [toType (interface :toType)]
-		(controller :characterSet newCharacterSet)
-		(gui/setText! toType "")
-		(while (< (count (gui/text toType)) 20)
-			(gui/setText! toType (str (gui/text toType) (getRandomCharacter env (controller :stats) (controller :characterSet))))
-		)
-		(hint (interface :fingers) (subs (gui/text toType) 0 1))
+	(controller :characterSet newCharacterSet)
+	(interface :toType "")
+	(while (< (count (interface :toType)) 20)
+		(interface :toType (str (interface :toType) (getRandomCharacter env (controller :stats) (controller :characterSet))))
 	)
+	(hint (interface :fingers) (subs (interface :toType) 0 1))
 )
 
-(defn keyDown! [key controller preview]
+(defn keyDown! [key controller interface]
 	(let [
 		encodeKey (controller :encodeKey)
 		encodedCharacter (controller :encodedCharacter)
@@ -85,7 +83,7 @@
 			(controller :inputMode :keyDown)
 			(let [newCharacter (bit-or encodedCharacter (get encodeKey key 0))]
 				(controller :encodedCharacter newCharacter)
-				(gui/setText! preview (char newCharacter))
+				(interface :preview (char newCharacter))
 			)	
 		)
 	)
@@ -98,16 +96,15 @@
 		encodedCharacter (controller :encodedCharacter)
 		newCharacter (bit-and encodedCharacter (bit-not(get encodeKey key 0)))
 		start (controller :start)
-		output (interface :output)
 		toType (interface :toType)
 	]
 		(when (contains? encodeKey key)
 			(if (= inputMode :keyDown)
 				(do
 					(env :log "first release")
-					(gui/setText! output (str (gui/text output) (char encodedCharacter)))
-					(when (= (char encodedCharacter) (subs (gui/text toType) 0 1))
-						(gui/setText! toType (subs (gui/text toType) 1))
+					(interface :output (str (interface :output) (char encodedCharacter)))
+					(when (= (char encodedCharacter) (subs toType 0 1))
+						(interface :toType (subs toType 1))
 						(let [end (env :now)]
 							(when start
 								(controller :addStatistic (char encodedCharacter) (- end start))
@@ -116,10 +113,10 @@
 							(controller :start end)
 						)
 					)
-					(hint (interface :fingers) (subs (gui/text toType) 0 1))
+					(hint (interface :fingers) (subs toType 0 1))
 					(controller :encodedCharacter newCharacter)
-					(while (< (count (gui/text toType)) 20)
-						(gui/setText! toType (str (gui/text toType) (getRandomCharacter env (controller :stats) (controller :characterSet))))
+					(while (< (count (interface :toType)) 20)
+						(interface :toType (str (interface :toType) (getRandomCharacter env (controller :stats) (controller :characterSet))))
 					)
 				)
 				(do
@@ -128,7 +125,7 @@
 				)
 			)
 			(controller :inputMode :keyUp)
-			(gui/setText! (interface :preview) (char newCharacter))
+			(interface :preview (char newCharacter))
 		)
 	)
 )

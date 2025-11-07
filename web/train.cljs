@@ -15,7 +15,7 @@
 		:loadCharacterSet #((controller) :characterSet)
 		:setCharacterSet #(updateCharacterSet! env (controller) interface %)
 		:loadText #((controller) :characterSet)
-		:keydown #(keyDown! % (controller) (interface :preview))
+		:keydown #(keyDown! % (controller) interface)
 		:keyup #(keyUp! env interface % (controller))
 	}))
 
