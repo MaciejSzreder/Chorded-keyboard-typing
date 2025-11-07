@@ -29,14 +29,14 @@
 	)
 )
 
-(defn getRandomNotMeasuredCharacter [stats characterSet]
-	(rand-nth (filter #(not (contains? stats %)) characterSet))
+(defn getRandomNotMeasuredCharacter [env stats characterSet]
+	(env :rand-nth (filter #(not (contains? stats %)) characterSet))
 )
-(defn getRandomMeasuredCharacter [stats characterSet]
+(defn getRandomMeasuredCharacter [env stats characterSet]
 	(let [
 		measured (filter #(contains? stats %) characterSet)
-		measurements (zipmap measured (map #(rand-nth (get stats %)) measured))
-		r (* (rand) (reduce + (vals measurements)))
+		measurements (zipmap measured (map #(env :rand-nth (get stats %)) measured))
+		r (* (env :rand) (reduce + (vals measurements)))
 		]
 		(reduce
 			(fn[acc [char time]]
@@ -52,24 +52,24 @@
 		)
 	)
 )
-(defn getRandomCharacter [stats characterSet]
-	(if (< (rand) 0.5)
+(defn getRandomCharacter [env stats characterSet]
+	(if (< (env :rand) 0.5)
 		(if (every? (fn[char] (contains? stats char)) characterSet) ;; every character has been measured
-			(getRandomMeasuredCharacter stats characterSet)
-			(getRandomNotMeasuredCharacter stats characterSet)
+			(getRandomMeasuredCharacter env stats characterSet)
+			(getRandomNotMeasuredCharacter env stats characterSet)
 		)
 		(if (empty? stats)
-			(getRandomNotMeasuredCharacter stats characterSet)
-			(getRandomMeasuredCharacter stats characterSet)
+			(getRandomNotMeasuredCharacter env stats characterSet)
+			(getRandomMeasuredCharacter env stats characterSet)
 		)
 	)
 )
 
-(defn updateCharacterSet! [controller newCharacterSet toType fingers]
+(defn updateCharacterSet! [env controller newCharacterSet toType fingers]
 	(controller :characterSet newCharacterSet)
 	(gui/setText! toType "")
 	(while (< (count (gui/text toType)) 20)
-		(gui/setText! toType (str (gui/text toType) (getRandomCharacter (controller :stats) (controller :characterSet))))
+		(gui/setText! toType (str (gui/text toType) (getRandomCharacter env (controller :stats) (controller :characterSet))))
 	)
 	(hint fingers (subs (gui/text toType) 0 1))
 )
@@ -89,7 +89,7 @@
 	)
 )
 
-(defn keyUp! [key controller preview output toType fingers]
+(defn keyUp! [env key controller preview output toType fingers]
 	(let [
 		encodeKey (controller :encodeKey)
 		inputMode (controller :inputMode)
@@ -115,7 +115,7 @@
 					(hint fingers (subs (gui/text toType) 0 1))
 					(controller :encodedCharacter newCharacter)
 					(while (< (count (gui/text toType)) 20)
-						(gui/setText! toType (str (gui/text toType) (getRandomCharacter (controller :stats) (controller :characterSet))))
+						(gui/setText! toType (str (gui/text toType) (getRandomCharacter env (controller :stats) (controller :characterSet))))
 					)
 				)
 				(do

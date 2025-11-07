@@ -39,7 +39,7 @@
 	(def characterSetConfiguration (gui/textField ((controller) :characterSet) {
 		:width :100ch,
 		:font-family :monospace,
-	} #(updateCharacterSet! (controller) (gui/text characterSetConfiguration) toType fingers)
+	} #(updateCharacterSet! env (controller) (gui/text characterSetConfiguration) toType fingers)
 	))
 	(gui/render characterSetConfiguration)
 
@@ -58,6 +58,6 @@
 		:keydown
 			#(keyDown! % (controller) preview),
 		:keyup
-			#(keyUp! % (controller) preview output toType fingers)
+			#(keyUp! env % (controller) preview output toType fingers)
 	})
 )
